@@ -1,0 +1,76 @@
+select emp_fname, emp_lname, emp_email;
+from lgemployee;
+where emp_hiredate between '01/01/2001' and '31/12/2010';
+order by emp_lname, emp_fname;
+--
+select emp_fname, emp_lname, emp_phone, emp_title,lgemployee.dept_num  from lgemployee; 
+inner join lgdepartment on lgemployee.dept_num = lgdepartment.dept_num;
+where lgemployee.dept_num = 300 OR emp_title = 'CLERK I';
+order by emp_lname, lgemployee.emp_fname;
+-- 
+select lgemployee.emp_num, emp_lname, emp_fname, sal_from, sal_end, sal_amount; 
+from lgemployee;
+inner join lgsalary_history on lgsalary_history.emp_num = lgemployee.emp_num;
+where lgemployee.emp_num in (83731, 837455, 84039);
+order by emp_num, sal_from;
+--
+select distinct cust_fname, cust_lname, cust_street, cust_city, cust_state, cust_zip;
+from lgcustomer;
+inner join lginvoice on lgcustomer.cust_code = lginvoice.cust_code;
+inner join lgline on lgline.inv_num = lginvoice.inv_num;
+inner join lgProduct on lgproduct.prod_sku = lgline.prod_sku;
+inner join lgbrand on lgbrand.brand_id = lgProduct.brand_id;
+where brand_name = ' Foresters Best brand top coat' and inv_date between '15-07-17' and '31-07-17';
+order by cust_state, cust_lname, cust_fname;
+--
+select lgemployee.emp_num, emp_lname, emp_fname, MAX(sal_amount) as largestSalary; 
+from lgemployee;
+inner join lgsalary_history on lgsalary_history.emp_num = lgemployee.emp_num;
+where dept_num = 200;
+group by lgemployee.emp_num, emp_lname, emp_fname;
+order by MAX(sal_amount) desc;
+--
+select lgemployee.emp_num, emp_lname, emp_fname, max(sal_amount);
+from lgemployee; 
+inner join lgsalary_history on lgsalary_history.emp_num = lgemployee.emp_num;
+where dept_num = 300 and sal_end is null;
+group by lgemployee.emp_num, emp_lname, emp_fname;
+order by max(sal_amount) desc;
+--
+select c1.inv_num, c1.line_num, c1.prod_sku, c1.prod_descript, c2.line_num, c2.prod_sku, c2.prod_descript, c1.brand_id 
+from (select l.inv_num, l.line_num, p.prod_sku, p.prod_descript, p.brand_id, p.prod_category 
+from (select l.inv_num, l.line_num, p.prod_sku, p.prod_descript, p.brand_id, p.prod_category from lgline l, lgproduct p 
+where l.prod_sku = p.prod_sku and p.prod_category = 'Sealer') c1,
+(select l2.line_num, p2.prod_sku, p2.prod_descript, p2.brand_id, l2.inv_num, p2.prod_category 
+from lgline l2, lgproduct p2
+where l2.prod_sku = p2.prod_sku and p2.prod_category = 'Top Coat') c2 
+where c1.inv_num = c2.inv_num and c1.brand_id = c2.brand_id 
+order by c1.inv_num, c1.line_num; 
+--
+Select emp_num, emp_fname, emp_lname, emp_email, sum(line_qty) as Total;
+From lgemployee;
+inner join lginvoice on lginvoice.employee_id = lgemployee.emp_num;
+inner join lgline on lginvoice.inv_num = lgline.inv_num;
+inner join lgproduct on lgproduct.prod_sku = lgline.prod_sku;
+inner join lgbrand on lgbrand.brand_id = lgproduct.brand_id;
+where brand_name = 'BINDER PRIME' and inv_date between '01-11-15' And '05-12-15';
+group by emp_num, emp_fname, emp_lname, emp_email;
+Order by sum(line_qty) desc;
+--
+Select distinct lgcustomer.cust_code, cust_fname, cust_lname; 
+From lgcustomer;
+where 2 = (select count(*) 
+from (select distinct employee_ID from lginvoice 
+where cust_code = lgcustomer.cust_code and employee_id in (83649, 83677)  group by employee_id));
+Order by cust_lname, cust_fname;
+--
+Select cust_code, cust_fname, cust_lname, cust_street, cust_city, cust_state, cust_zip,
+(Select MAX(inv_date) from lgInvoice where lginvoice.cust_code = lgcustomer.cust_code ) as inv_date, 
+(Select Max(inv_Total) from lgInvoice where lginvoice.cust_code = lgcustomer.cust_code) as Largest_Invoice;
+From lgcustomer; 
+Where cust_state = 'AL';
+--
+Select brand_name, brand_type, 
+(select Avg(prod_price) from lgproduct lp where lp.brand_id = lgbrand.brand_id ) as Average_Price,
+(select sum(line_qty) from lgproduct lp1 inner join lgline on lgline.prod_sku = lp1.prod_sku where lp1.brand_id = lgbrand.brand_id ) as Unit_sold;
+From lgbrand;
